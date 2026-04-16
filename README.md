@@ -1,6 +1,8 @@
-# PathShare – Android App
+# PathShare 🗺️
 
-Record your GPS route, share it with friends, and guide them along the exact same path.
+> Record your GPS route, share it with a 6-character code, and let friends follow your exact path with live turn-by-turn guidance.
+
+[![Codemagic build status](https://api.codemagic.io/apps/YOUR_APP_ID/android-release/status_badge.svg)](https://codemagic.io/apps/YOUR_APP_ID/android-release/latest_build)
 
 ---
 
@@ -8,160 +10,265 @@ Record your GPS route, share it with friends, and guide them along the exact sam
 
 | Feature | Description |
 |---|---|
-| 🔴 Record Route | Live GPS tracking on Google Maps with real-time polyline drawing |
-| 📊 Live Stats | Distance and duration shown while recording |
-| 💾 Save Locally | All routes stored on-device (no login required for basic use) |
-| 📤 Share Code | Upload route to Firebase → generate a 6-char code |
-| 🔑 Enter Code | Friends enter the code → route downloads to their device |
-| ▶ Follow Route | Real-time guidance along the recorded path with turn-by-turn direction arrows |
-| 🎯 Arrival Alert | Vibration + toast when destination is reached |
-| 📋 Route History | View, share, or delete all saved routes |
-| 🔗 Deep Link | `pathshare://route?code=XXXXXX` opens the app directly |
+| 🔴 **Record** | Live GPS tracking on Google Maps — polyline drawn in real-time |
+| 💾 **Save** | Routes stored on-device, no account needed |
+| 📤 **Share** | 6-character code uploaded to Firebase Firestore |
+| 🔑 **Enter Code** | Friends type the code → route downloads instantly |
+| ▶ **Follow** | Real-time guidance: grey = full route, green = completed, arrow = direction |
+| 🎯 **Arrival Alert** | Vibration + banner on destination reached |
+| 📋 **History** | View, re-share, or delete all saved routes |
+| 🔗 **Deep Link** | `pathshare://route?code=XXXXXX` opens the app directly |
 
 ---
 
 ## Project Structure
 
 ```
-PathShareApp/
-├── app/src/main/
-│   ├── AndroidManifest.xml
-│   ├── java/com/pathshare/app/
-│   │   ├── activities/
-│   │   │   ├── MainActivity.java          ← Record + share screen
-│   │   │   ├── RoutePlaybackActivity.java ← Follow a shared route
-│   │   │   └── RouteHistoryActivity.java  ← All saved routes
-│   │   ├── services/
-│   │   │   └── LocationTrackingService.java ← Foreground GPS service
-│   │   ├── models/
-│   │   │   ├── Route.java                 ← Route data model
-│   │   │   └── RoutePoint.java            ← Single GPS waypoint
-│   │   └── utils/
-│   │       └── RouteRepository.java       ← Local + Firebase storage
-│   └── res/layout/
-│       ├── activity_main.xml
-│       ├── activity_route_playback.xml
-│       ├── activity_route_history.xml
-│       └── item_route.xml
+PathShare/
+├── codemagic.yaml                   ← CI/CD pipeline (3 workflows)
+├── .github/workflows/android-ci.yml ← GitHub Actions (lint + unit tests)
+├── .gitignore
+├── gradle.properties
+├── settings.gradle
+├── build.gradle
+└── app/
+    ├── build.gradle                 ← Dependencies + signing config
+    ├── proguard-rules.pro
+    ├── google-services.json.example ← Template — replace with real file
+    └── src/
+        ├── main/
+        │   ├── AndroidManifest.xml
+        │   ├── java/com/pathshare/app/
+        │   │   ├── activities/
+        │   │   │   ├── MainActivity.java          ← Record + share screen
+        │   │   │   ├── RoutePlaybackActivity.java ← Follow a shared route
+        │   │   │   └── RouteHistoryActivity.java  ← All saved routes
+        │   │   ├── services/
+        │   │   │   └── LocationTrackingService.java ← Foreground GPS service
+        │   │   ├── models/
+        │   │   │   ├── Route.java
+        │   │   │   └── RoutePoint.java
+        │   │   └── utils/
+        │   │       └── RouteRepository.java       ← Local + Firebase storage
+        │   └── res/
+        │       ├── layout/          ← All XML layouts
+        │       ├── drawable/        ← Vector icons
+        │       ├── values/          ← strings, colors, themes, dimens
+        │       └── xml/             ← network_security_config
+        ├── test/                    ← Unit tests (JUnit)
+        └── androidTest/             ← Instrumented tests (Espresso)
 ```
 
 ---
 
-## Setup Instructions
+## Quick Start
 
-### 1. Google Maps API Key
+### 1. Clone & open in Android Studio
+
+```bash
+git clone https://github.com/YOUR_USERNAME/PathShare.git
+cd PathShare
+```
+
+Open the folder in **Android Studio Hedgehog (2023.1.1)** or newer.
+
+---
+
+### 2. Google Maps API Key
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create / select a project
-3. Enable **Maps SDK for Android** and **Places API**
-4. Create an API key (restrict it to your app's package + SHA-1)
-5. Open `app/build.gradle` and replace:
-   ```groovy
-   manifestPlaceholders = [MAPS_API_KEY: "YOUR_GOOGLE_MAPS_API_KEY"]
+3. Enable: **Maps SDK for Android**
+4. Create an API Key → restrict it to your package `com.pathshare.app` + your debug/release SHA-1
+5. Open `gradle.properties` and replace:
+   ```properties
+   MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY_HERE
    ```
 
-### 2. Firebase Setup
+> **For CI:** add `MAPS_API_KEY` as an environment variable in Codemagic (see below).
+
+---
+
+### 3. Firebase Setup
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project
-3. Add an **Android** app with package `com.pathshare.app`
-4. Download `google-services.json` and place it in the `app/` folder
-5. Enable **Firestore Database** in the Firebase console
-6. Set Firestore rules (for development):
-   ```
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /shared_routes/{code} {
-         allow read, write: if true;
-       }
-     }
-   }
-   ```
-   > ⚠️ Tighten these rules before production!
+2. Create a new project → **Add Android app** → package: `com.pathshare.app`
+3. Download `google-services.json` → place it in `app/google-services.json`
+4. Enable **Cloud Firestore** (Start in test mode for development)
+5. Recommended Firestore security rules:
 
-### 3. Drawable Resources Needed
-
-Add these to `app/src/main/res/drawable/`:
-
-- `ic_launcher.xml` (or PNG) – app icon
-- `ic_record.xml` – small icon for the notification (24×24dp white vector)
-
-Example `ic_record.xml`:
-```xml
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
-  <path android:fillColor="#FFFFFF" android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10-4.48 10-10S17.52,2 12,2z"/>
-</vector>
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /shared_routes/{code} {
+      allow read: if true;               // anyone can read a shared route
+      allow write: if request.auth != null;  // only authenticated users write
+    }
+  }
+}
 ```
 
-### 4. Build & Run
+> **For CI:** base64-encode your `google-services.json` and store it as `GOOGLE_SERVICES_JSON` in Codemagic environment variables.
 
 ```bash
-# From Android Studio: open PathShareApp folder → Run on device/emulator
-# Or from CLI:
+# Generate the base64 string to paste into Codemagic:
+base64 -i app/google-services.json | pbcopy   # macOS
+base64 -w 0 app/google-services.json          # Linux
+```
+
+---
+
+## GitHub Setup
+
+### Push to GitHub
+
+```bash
+git init
+git add .
+git commit -m "Initial commit: PathShare Android app"
+git remote add origin https://github.com/YOUR_USERNAME/PathShare.git
+git branch -M main
+git push -u origin main
+```
+
+### Recommended branch strategy
+
+```
+main          ← stable, triggers release build in Codemagic
+develop       ← integration branch, triggers debug build
+feature/*     ← feature branches, triggers PR check
+release/x.y   ← release candidates
+```
+
+---
+
+## Codemagic CI/CD Setup
+
+### Step 1 — Connect your repository
+
+1. Sign in at [codemagic.io](https://codemagic.io) with GitHub
+2. Click **Add application** → select `PathShare`
+3. Codemagic auto-detects `codemagic.yaml` ✅
+
+### Step 2 — Create environment variable group
+
+In Codemagic → **Teams → Global variables** (or app-level):
+
+Create a group named **`pathshare_env`** with these variables:
+
+| Variable | Value | Secret? |
+|---|---|---|
+| `MAPS_API_KEY` | Your Google Maps API key | ✅ Yes |
+| `GOOGLE_SERVICES_JSON` | Base64-encoded `google-services.json` | ✅ Yes |
+| `EMAIL_RECIPIENTS` | your@email.com | No |
+
+### Step 3 — Add keystore (for release signing)
+
+1. Codemagic → App settings → **Code signing** → **Android** → **Add keystore**
+2. Upload your `.jks` or `.keystore` file
+3. Name it **`pathshare_keystore`** (must match `codemagic.yaml`)
+4. Enter key alias, key password, store password
+
+> **Create a new keystore** if you don't have one:
+> ```bash
+> keytool -genkey -v -keystore pathshare.keystore \
+>   -alias pathshare -keyalg RSA -keysize 2048 -validity 10000
+> ```
+> Keep this file safe — you need the same keystore to update your app on Play Store forever.
+
+### Step 4 — Workflows overview
+
+| Workflow | Trigger | Output |
+|---|---|---|
+| `android-debug` | Push to **any branch** | Debug APK |
+| `android-release` | Push to `main` or tag `v*` | Signed APK + AAB |
+| `android-pr-check` | Pull Request | Lint + test report only |
+
+### Step 5 — Tag a release
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Codemagic picks up the tag → builds a signed release AAB ready for Play Store. 🚀
+
+---
+
+## Publishing to Google Play (optional)
+
+Uncomment the `google_play` section in `codemagic.yaml`:
+
+```yaml
+publishing:
+  google_play:
+    credentials: $GPLAY_SERVICE_ACCOUNT_JSON
+    track: internal
+    submit_as_draft: true
+```
+
+Add `GPLAY_SERVICE_ACCOUNT_JSON` (base64-encoded service account JSON) to Codemagic environment variables.
+
+---
+
+## Running Locally
+
+```bash
+# Debug build
 ./gradlew assembleDebug
-adb install app/build/outputs/apk/debug/app-debug.apk
+
+# Install on connected device
+./gradlew installDebug
+
+# Unit tests
+./gradlew test
+
+# Lint
+./gradlew lint
 ```
 
 ---
 
-## How It Works
+## App Permissions Explained
 
-### Recording a Route
-1. Tap **Start Recording** → name your route
-2. Walk/drive — GPS points are saved every 3 seconds (filtered to ≤30 m accuracy)
-3. A blue polyline draws live on the map
-4. Tap **Stop & Save** → route saved locally
-
-### Sharing
-1. After stopping, tap **Share Code** (or open History → share)
-2. Route uploads to Firebase Firestore
-3. A 6-character code is generated (e.g. `K7PQ2R`)
-4. Share via WhatsApp, SMS, any app
-
-### Following (Friends)
-1. Friend opens PathShare → taps **Enter Code**
-2. Types the 6-char code → route downloads
-3. Taps **Start Following**
-4. App updates live:
-   - **Grey line** = full recorded route
-   - **Green line** = portion already covered
-   - **Arrow + direction** = turn instruction (straight / left / right / etc.)
-   - **Progress bar** = how far along the route
-5. On arrival: vibration + success message
-
----
-
-## Permissions
-
-| Permission | Reason |
+| Permission | Why |
 |---|---|
-| `ACCESS_FINE_LOCATION` | GPS tracking |
-| `ACCESS_BACKGROUND_LOCATION` | Continue recording when screen off |
-| `FOREGROUND_SERVICE_LOCATION` | Required for Android 14+ foreground location |
-| `INTERNET` | Google Maps tiles + Firebase |
-| `VIBRATE` | Arrival alert |
+| `ACCESS_FINE_LOCATION` | Precise GPS for route recording |
+| `ACCESS_BACKGROUND_LOCATION` | Continue recording when screen is off |
+| `FOREGROUND_SERVICE_LOCATION` | Android 14+ requirement for foreground location service |
+| `INTERNET` | Google Maps tiles + Firebase sync |
+| `VIBRATE` | Haptic feedback on destination arrival |
 
 ---
 
-## Customisation Tips
+## Environment Variables Reference
 
-- **Tracking interval**: change `INTERVAL_MS` in `LocationTrackingService.java` (default 3000 ms)
-- **Accuracy filter**: change `MIN_ACCURACY` (default 30 m — increase for urban canyons)
-- **Arrival distance**: change `ARRIVAL_THRESHOLD` in `RoutePlaybackActivity.java` (default 25 m)
-- **Map style**: add a `map_style.json` file and call `map.setMapStyle(...)` for a custom look
-- **Route expiry**: add a `createdAt` Firestore field and a Cloud Function to delete old routes
+| Variable | Where used | Description |
+|---|---|---|
+| `MAPS_API_KEY` | `gradle.properties` / Codemagic | Google Maps Android API key |
+| `GOOGLE_SERVICES_JSON` | `codemagic.yaml` script | Base64 Firebase config |
+| `CM_KEYSTORE_PATH` | Set by Codemagic automatically | Path to uploaded keystore |
+| `CM_KEY_ALIAS` | Set by Codemagic automatically | Key alias |
+| `CM_KEY_PASSWORD` | Set by Codemagic automatically | Key password |
+| `CM_STORE_PASSWORD` | Set by Codemagic automatically | Store password |
+| `EMAIL_RECIPIENTS` | `codemagic.yaml` | Build notification email(s) |
 
 ---
 
-## Dependencies
+## Tech Stack
 
-```
-Google Maps SDK for Android  18.2.0
-Google Location Services      21.1.0
-Firebase Firestore            (BOM 32.7.0)
-Gson                          2.10.1
-Material Components           1.11.0
-Room (local DB)               2.6.1
-```
+- **Language:** Java 17
+- **Min SDK:** 24 (Android 7.0) · **Target SDK:** 34 (Android 14)
+- **Google Maps SDK:** 18.2.0
+- **Google Location:** 21.2.0
+- **Firebase Firestore:** BOM 32.8.0
+- **Gson:** 2.10.1
+- **Material Components:** 1.11.0
+- **CI/CD:** Codemagic (`codemagic.yaml`)
+
+---
+
+## License
+
+MIT © 2024 PathShare

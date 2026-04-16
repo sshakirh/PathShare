@@ -1,4 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PathShare</string>
+    <string name="title_follow_route">Follow Route</string>
+    <string name="title_my_routes">My Routes</string>
+
+    <!-- MainActivity -->
+    <string name="btn_start_recording">● Start Recording</string>
+    <string name="btn_stop_save">■ Stop &amp; Save</string>
+    <string name="btn_history">📋 History</string>
+    <string name="btn_enter_code">🔑 Enter Code</string>
+    <string name="hint_route_name">e.g. Morning walk to market</string>
+    <string name="dialog_name_route">Name this route</string>
+    <string name="dialog_start">Start</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_stop_title">Stop Recording?</string>
+    <string name="dialog_stop_msg">Your route will be saved. You can share it afterwards.</string>
+    <string name="dialog_stop_confirm">Stop &amp; Save</string>
+    <string name="dialog_continue">Continue</string>
+    <string name="dialog_route_saved">Route Saved!</string>
+    <string name="dialog_share_code">Share Code</string>
+    <string name="dialog_later">Later</string>
+    <string name="dialog_share_via_apps">Share via Apps</string>
+    <string name="dialog_done">Done</string>
+    <string name="dialog_load_route">Load Shared Route</string>
+    <string name="hint_enter_code">Enter 6-character code</string>
+    <string name="btn_load">Load</string>
+    <string name="err_code_length">Code must be 6 characters</string>
+    <string name="err_location_permission">Location permission required</string>
+    <string name="toast_recording_started">Recording started!</string>
+    <string name="notification_recording_title">PathShare – Recording</string>
+    <string name="notification_channel_name">Location Tracking</string>
+    <string name="notification_channel_desc">Used while recording your route</string>
+
+    <!-- RoutePlaybackActivity -->
+    <string name="btn_start_following">▶ Start Following</string>
+    <string name="btn_stop_following">■ Stop</string>
+    <string name="guidance_getting_location">Getting your location…</string>
+    <string name="toast_location_needed">Location permission needed</string>
+    <string name="toast_arrived">You have arrived at the destination!</string>
+    <string name="guidance_arrived">🎉 You have arrived!</string>
+    <string name="guidance_destination_reached">Destination reached</string>
+    <string name="marker_start">Start</string>
+    <string name="marker_destination">Destination</string>
+    <string name="marker_you">You</string>
+    <string name="marker_next">Next</string>
+
+    <!-- RouteHistoryActivity -->
+    <string name="title_routes">My Routes</string>
+    <string name="empty_routes">No routes yet.\nRecord your first route!</string>
+    <string name="option_replay">▶ Replay / Follow</string>
+    <string name="option_share">📤 Share Route</string>
+    <string name="option_delete">🗑 Delete</string>
+    <string name="dialog_delete_title">Delete Route?</string>
+    <string name="dialog_delete_msg">This cannot be undone.</string>
+    <string name="btn_delete">Delete</string>
+    <string name="dialog_share_failed">Share Failed</string>
+    <string name="btn_ok">OK</string>
+    <string name="share_route_text">Follow my route on PathShare!\nCode: %1$s\nOr tap: pathshare://route?code=%1$s</string>
+    <string name="share_chooser_title">Share Route</string>
+    <string name="code_prefix">Code: </string>
 </resources>

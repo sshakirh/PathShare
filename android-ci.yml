@@ -1,0 +1,76 @@
+name: Android CI (GitHub Actions)
+
+# This is an OPTIONAL companion to codemagic.yaml.
+# Use it for quick lint/test feedback directly in GitHub PRs.
+# Full APK/AAB builds are handled by Codemagic.
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    name: Lint & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Create dummy google-services.json
+        # A placeholder so Gradle doesn't fail – real one is in Codemagic secrets
+        run: |
+          cat > app/google-services.json << 'EOF'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "pathshare-placeholder",
+              "storage_bucket": "pathshare-placeholder.appspot.com"
+            },
+            "client": [{
+              "client_info": {
+                "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+                "android_client_info": { "package_name": "com.pathshare.app" }
+              },
+              "api_key": [{"current_key": "placeholder"}],
+              "services": {"appinvite_service": {"other_platform_oauth_client": []}}
+            }],
+            "configuration_version": "1"
+          }
+          EOF
+
+      - name: Set placeholder Maps API key
+        run: echo "MAPS_API_KEY=PLACEHOLDER_FOR_CI" >> gradle.properties
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run lint
+        run: ./gradlew lint
+        continue-on-error: true
+
+      - name: Run unit tests
+        run: ./gradlew test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: app/build/reports/tests/
+
+      - name: Upload lint results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lint-results
+          path: app/build/reports/lint-results*.html

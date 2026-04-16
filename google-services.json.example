@@ -1,0 +1,31 @@
+{
+  "_comment": "REPLACE THIS FILE with your real google-services.json from Firebase Console.",
+  "_comment2": "Do NOT commit the real file — it is listed in .gitignore.",
+  "_comment3": "In Codemagic: store the base64-encoded real file as GOOGLE_SERVICES_JSON env var.",
+  "project_info": {
+    "project_number": "YOUR_PROJECT_NUMBER",
+    "project_id":     "YOUR_PROJECT_ID",
+    "storage_bucket": "YOUR_PROJECT_ID.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:YOUR_PROJECT_NUMBER:android:YOUR_APP_ID",
+        "android_client_info": {
+          "package_name": "com.pathshare.app"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "YOUR_FIREBASE_API_KEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

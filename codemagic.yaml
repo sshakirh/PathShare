@@ -1,30 +1,186 @@
 workflows:
-  android-workflow:
-    name: PathShare Android Build
-    max_build_duration: 60
-    instance_type: mac_mini_m1
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 1. ANDROID DEBUG BUILD  (triggered on every push to any branch)
+  # ─────────────────────────────────────────────────────────────────────────────
+  android-debug:
+    name: Android Debug Build
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+
     environment:
-      # Use groups for your Firebase/API secrets later
+      android_signing:
+        - pathshare_keystore          # keystore added in Codemagic UI
       groups:
-        - default 
+        - pathshare_env               # environment variable group (see README)
       vars:
-        JAVA_VERSION: "17"
+        PACKAGE_NAME: "com.pathshare.app"
+      java: 17
+
     triggering:
       events:
         - push
       branch_patterns:
-        - pattern: 'main'
+        - pattern: '*'
+          include: true
+
     scripts:
-      - name: Set up local.properties
-        script: | 
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-      - name: Build Android APK
-        script: | 
+      - name: Set up environment
+        script: |
+          echo "MAPS_API_KEY=$MAPS_API_KEY" >> gradle.properties
+
+      - name: Write google-services.json
+        script: |
+          echo $GOOGLE_SERVICES_JSON | base64 --decode > $CM_BUILD_DIR/app/google-services.json
+
+      - name: Build debug APK
+        script: |
+          cd $CM_BUILD_DIR
           chmod +x gradlew
           ./gradlew assembleDebug
+
+      - name: Run unit tests
+        script: |
+          cd $CM_BUILD_DIR
+          ./gradlew test
+
     artifacts:
-      - app/build/outputs/apk/**/*.apk
+      - app/build/outputs/apk/debug/*.apk
+      - app/build/reports/tests/**/*
+
     publishing:
       email:
         recipients:
-          - s.shakir.h@gmail.com
+          - $EMAIL_RECIPIENTS
+        notify:
+          success: true
+          failure: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 2. ANDROID RELEASE BUILD  (triggered on push to main / tag v*)
+  # ─────────────────────────────────────────────────────────────────────────────
+  android-release:
+    name: Android Release Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      android_signing:
+        - pathshare_keystore          # keystore name as added in Codemagic UI
+      groups:
+        - pathshare_env
+      vars:
+        PACKAGE_NAME: "com.pathshare.app"
+      java: 17
+
+    triggering:
+      events:
+        - push
+        - tag
+      branch_patterns:
+        - pattern: main
+          include: true
+        - pattern: release/*
+          include: true
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+
+    scripts:
+      - name: Set up environment
+        script: |
+          echo "MAPS_API_KEY=$MAPS_API_KEY" >> gradle.properties
+
+      - name: Write google-services.json
+        script: |
+          echo $GOOGLE_SERVICES_JSON | base64 --decode > $CM_BUILD_DIR/app/google-services.json
+
+      - name: Set version from Git tag
+        script: |
+          # If triggered by a tag like v1.2.3, update versionName in build.gradle
+          if [[ "$CM_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            VERSION=${CM_TAG#v}
+            BUILD_NUMBER=$CM_BUILD_NUMBER
+            sed -i "s/versionCode [0-9]*/versionCode $BUILD_NUMBER/" app/build.gradle
+            sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION\"/" app/build.gradle
+            echo "Set versionName=$VERSION, versionCode=$BUILD_NUMBER"
+          fi
+
+      - name: Run unit tests
+        script: |
+          cd $CM_BUILD_DIR
+          chmod +x gradlew
+          ./gradlew test
+
+      - name: Build release APK + AAB
+        script: |
+          cd $CM_BUILD_DIR
+          ./gradlew assembleRelease bundleRelease
+
+    artifacts:
+      - app/build/outputs/apk/release/*.apk
+      - app/build/outputs/bundle/release/*.aab
+      - app/build/outputs/mapping/release/mapping.txt
+      - app/build/reports/tests/**/*
+
+    publishing:
+      email:
+        recipients:
+          - $EMAIL_RECIPIENTS
+        notify:
+          success: true
+          failure: true
+      # ── Uncomment to publish to Google Play ──────────────────────────────────
+      # google_play:
+      #   credentials: $GPLAY_SERVICE_ACCOUNT_JSON
+      #   track: internal          # internal | alpha | beta | production
+      #   submit_as_draft: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 3. PULL REQUEST CHECK  (builds + tests every PR, no artifacts published)
+  # ─────────────────────────────────────────────────────────────────────────────
+  android-pr-check:
+    name: PR Check
+    max_build_duration: 20
+    instance_type: mac_mini_m2
+
+    environment:
+      groups:
+        - pathshare_env
+      java: 17
+
+    triggering:
+      events:
+        - pull_request
+      branch_patterns:
+        - pattern: '*'
+          include: true
+
+    scripts:
+      - name: Set up environment
+        script: |
+          echo "MAPS_API_KEY=$MAPS_API_KEY" >> gradle.properties
+
+      - name: Write google-services.json
+        script: |
+          echo $GOOGLE_SERVICES_JSON | base64 --decode > $CM_BUILD_DIR/app/google-services.json
+
+      - name: Lint check
+        script: |
+          cd $CM_BUILD_DIR
+          chmod +x gradlew
+          ./gradlew lint || true     # warn but don't fail build on lint issues
+
+      - name: Unit tests
+        script: |
+          cd $CM_BUILD_DIR
+          ./gradlew test
+
+      - name: Build debug (verify it compiles)
+        script: |
+          cd $CM_BUILD_DIR
+          ./gradlew assembleDebug
+
+    artifacts:
+      - app/build/reports/lint-results*.html
+      - app/build/reports/tests/**/*
