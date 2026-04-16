@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "689403714224",
+    "project_id": "project-5f501ccf-89ac-4b59-8bb",
+    "storage_bucket": "project-5f501ccf-89ac-4b59-8bb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:689403714224:android:4209c2e21db7ba76f63975",
+        "android_client_info": {
+          "package_name": "com.pathshare.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAweoyFpKraRL5B09LojwnWB2ysFHVR_Sg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
