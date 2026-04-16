@@ -24,7 +24,9 @@ workflows:
 
       - name: Build debug APK
         script: |
-          # This ensures the build script has permission to run
+          # If your files are inside a folder named PathShare, we 'cd' into it first
+          # If the folder name is different, change 'PathShare' to that name
+          cd PathShare 
           chmod +x gradlew
           ./gradlew assembleDebug
 
