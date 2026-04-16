@@ -1,11 +1,14 @@
 workflows:
   android-workflow:
-    name: Android Debug Build
+    name: PathShare Android Build
     max_build_duration: 60
     instance_type: mac_mini_m1
     environment:
-      android_sdk: 33
-      java: 17
+      # Use groups for your Firebase/API secrets later
+      groups:
+        - default 
+      vars:
+        JAVA_VERSION: "17"
     triggering:
       events:
         - push
@@ -17,10 +20,11 @@ workflows:
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
       - name: Build Android APK
         script: | 
+          chmod +x gradlew
           ./gradlew assembleDebug
     artifacts:
       - app/build/outputs/apk/**/*.apk
     publishing:
       email:
         recipients:
-          - s.shakir.h@gmail.com # Put your email here
+          - s.shakir.h@gmail.com
