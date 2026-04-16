@@ -1,12 +1,11 @@
 workflows:
   android-debug:
-    name: PathShare Debug Build
-    max_build_duration: 30
+    name: PathShare Diagnostic Build
+    max_build_duration: 10
     instance_type: mac_mini_m2
 
     environment:
       vars:
-        # 1. Update this to your actual app package name
         PACKAGE_NAME: "com.pathshare.app"
         JAVA_VERSION: "17"
     
@@ -18,26 +17,8 @@ workflows:
           include: true
 
     scripts:
-      - name: Set up local.properties
+      - name: List Files to Find Gradlew
         script: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-
-      - name: Build debug APK
-        script: |
-          # If your files are inside a folder named PathShare, we 'cd' into it first
-          # If the folder name is different, change 'PathShare' to that name
-          cd PathShare 
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-    artifacts:
-      - app/build/outputs/apk/debug/*.apk
-
-    publishing:
-      email:
-        recipients:
-          # 2. REPLACE THIS with your actual email address
-          - s.shakir.h@gmail.com
-        notify:
-          success: true
-          failure: true
+          echo "Current directory is: $(pwd)"
+          echo "Listing all files in the root:"
+          ls -R
